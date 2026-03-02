@@ -168,6 +168,18 @@ vim.o.scrolloff = 10
 -- See `:help 'confirm'`
 vim.o.confirm = true
 
+-- Auto-reload files changed outside of Neovim
+vim.o.autoread = true
+vim.api.nvim_create_autocmd({ 'FocusGained', 'BufEnter', 'CursorHold', 'CursorHoldI' }, {
+  desc = 'Check if file changed on disk',
+  group = vim.api.nvim_create_augroup('auto-reload', { clear = true }),
+  callback = function()
+    if vim.fn.mode() ~= 'c' then
+      vim.cmd 'checktime'
+    end
+  end,
+})
+
 -- [[ Basic Keymaps ]]
 --  See `:help vim.keymap.set()`
 
@@ -203,6 +215,13 @@ vim.keymap.set('t', '<Esc><Esc>', '<C-\\><C-n>', { desc = 'Exit terminal mode' }
 
 -- Use Shift+Tab to unindent in insert mode
 vim.keymap.set('i', '<S-Tab>', '<C-d>', { desc = 'Unindent line' })
+
+-- TypeScript / TSX keybindings (via typescript-tools.nvim)
+vim.keymap.set('n', '<leader>ti', '<cmd>TSToolsAddMissingImports<cr>', { desc = '[T]S add missing [I]mports' })
+vim.keymap.set('n', '<leader>to', '<cmd>TSToolsOrganizeImports<cr>', { desc = '[T]S [O]rganize imports' })
+vim.keymap.set('n', '<leader>tu', '<cmd>TSToolsRemoveUnusedImports<cr>', { desc = '[T]S remove [U]nused imports' })
+vim.keymap.set('n', '<leader>tf', '<cmd>TSToolsFixAll<cr>', { desc = '[T]S [F]ix all errors' })
+vim.keymap.set('n', '<leader>tr', '<cmd>TSToolsRenameFile<cr>', { desc = '[T]S [R]ename file (updates imports)' })
 
 -- TIP: Disable arrow keys in normal mode
 -- vim.keymap.set('n', '<left>', '<cmd>echo "Use h to move!!"<CR>')
@@ -627,9 +646,11 @@ require('lazy').setup({
         -- But for many setups, the LSP (`ts_ls`) will work just fine
         -- ts_ls = {},
 
+        svelte = {},
         tailwindcss = {},
+        eslint = {},
         emmet_language_server = {
-          filetypes = { 'html', 'css', 'typescriptreact', 'javascriptreact' },
+          filetypes = { 'html', 'css', 'typescriptreact', 'javascriptreact', 'svelte' },
         },
         yamlls = {
           settings = {
@@ -653,6 +674,17 @@ require('lazy').setup({
       --
       -- You can press `g?` for help in this menu.
       local ensure_installed = vim.tbl_keys(servers or {})
+      -- mason package names use hyphens; override lspconfig names that differ
+      local mason_name_overrides = {
+        emmet_language_server = 'emmet-language-server',
+        svelte = 'svelte-language-server',
+        tailwindcss = 'tailwindcss-language-server',
+        yamlls = 'yaml-language-server',
+        eslint = 'eslint-lsp',
+      }
+      ensure_installed = vim.tbl_map(function(name)
+        return mason_name_overrides[name] or name
+      end, ensure_installed)
       vim.list_extend(ensure_installed, {
         'lua-language-server', -- Lua Language server
         'stylua', -- Used to format Lua code
@@ -735,6 +767,7 @@ require('lazy').setup({
         javascriptreact = { 'prettierd', 'prettier', stop_after_first = true },
         typescript = { 'prettierd', 'prettier', stop_after_first = true },
         typescriptreact = { 'prettierd', 'prettier', stop_after_first = true },
+        svelte = { 'prettierd', 'prettier', stop_after_first = true },
         css = { 'prettierd', 'prettier', stop_after_first = true },
         html = { 'prettierd', 'prettier', stop_after_first = true },
         json = { 'prettierd', 'prettier', stop_after_first = true },
@@ -902,12 +935,22 @@ require('lazy').setup({
     'nvim-treesitter/nvim-treesitter',
     build = ':TSUpdate',
     config = function()
-      require('nvim-treesitter.configs').setup {
-        ensure_installed = { 'bash', 'c', 'css', 'diff', 'html', 'javascript', 'json', 'lua', 'luadoc', 'markdown', 'markdown_inline', 'query', 'tsx', 'typescript', 'vim', 'vimdoc', 'yaml' },
-        auto_install = false,
-        highlight = { enable = true },
-        indent = { enable = true },
-      }
+      -- nvim-treesitter v1.0+ removed 'nvim-treesitter.configs'.
+      -- Install parsers (skips already-installed ones):
+      require('nvim-treesitter.install').install({
+        'bash', 'c', 'css', 'diff', 'html', 'javascript', 'json',
+        'lua', 'luadoc', 'markdown', 'markdown_inline', 'query',
+        'svelte', 'tsx', 'typescript', 'vim', 'vimdoc', 'yaml',
+      })
+      -- Enable treesitter highlighting and indentation per filetype:
+      vim.api.nvim_create_autocmd('FileType', {
+        callback = function()
+          local ok = pcall(vim.treesitter.start)
+          if ok then
+            vim.bo.indentexpr = "v:lua.require'nvim-treesitter'.indentexpr()"
+          end
+        end,
+      })
     end,
   },
 

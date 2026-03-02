@@ -21,6 +21,26 @@ return {
     opts = {},
   },
   {
+    'windwp/nvim-ts-autotag',
+    event = 'InsertEnter',
+    opts = {},
+  },
+  {
+    'NvChad/nvim-colorizer.lua',
+    event = 'BufReadPre',
+    opts = {
+      user_default_options = {
+        tailwind = true,
+        css = true,
+      },
+    },
+  },
+  {
+    'OlegGulevskyy/better-ts-errors.nvim',
+    dependencies = { 'MunifTanjim/nui.nvim' },
+    opts = { keymaps = { toggle = '<leader>te' } },
+  },
+  {
     'kdheepak/lazygit.nvim',
     lazy = true,
     cmd = {
