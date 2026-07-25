@@ -580,6 +580,10 @@ require('lazy').setup({
           --
           -- When you move your cursor, the highlights will be cleared (the second autocommand).
           local client = vim.lsp.get_client_by_id(event.data.client_id)
+
+          -- Ruff runs alongside pyright for Python; let pyright own hover
+          if client and client.name == 'ruff' then client.server_capabilities.hoverProvider = false end
+
           if client and client:supports_method('textDocument/documentHighlight', event.buf) then
             local highlight_augroup = vim.api.nvim_create_augroup('kickstart-lsp-highlight', { clear = false })
             vim.api.nvim_create_autocmd({ 'CursorHold', 'CursorHoldI' }, {
@@ -633,11 +637,18 @@ require('lazy').setup({
             end
           end,
           settings = {
+            pyright = {
+              -- Ruff owns import organisation (see the ruff server below)
+              disableOrganizeImports = true,
+            },
             python = {
               pythonPath = '.venv/bin/python',
             },
           },
         },
+        -- Ruff runs as a second LSP beside pyright: live lint diagnostics plus
+        -- fix-all and organize-imports code actions. Pyright keeps types/hover.
+        ruff = {},
         -- rust_analyzer = {},
         --
         -- Some languages (like typescript) have entire language plugins that can be useful:
@@ -688,7 +699,6 @@ require('lazy').setup({
       vim.list_extend(ensure_installed, {
         'lua-language-server', -- Lua Language server
         'stylua', -- Used to format Lua code
-        'ruff', -- Python linter and formatter
         'prettierd', -- Fast Prettier daemon for formatting JS/TS/CSS/HTML
       })
 
