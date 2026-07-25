@@ -934,24 +934,22 @@ require('lazy').setup({
   { -- Highlight, edit, and navigate code
     'nvim-treesitter/nvim-treesitter',
     build = ':TSUpdate',
-    config = function()
-      -- nvim-treesitter v1.0+ removed 'nvim-treesitter.configs'.
-      -- Install parsers (skips already-installed ones):
-      require('nvim-treesitter.install').install({
+    -- NOTE: the master branch (default) is frozen upstream but is the one that
+    -- supports Neovim 0.11; the rewritten main branch needs 0.12 nightly APIs.
+    main = 'nvim-treesitter.configs', -- Sets main module to use for opts
+    -- [[ Configure Treesitter ]] See `:help nvim-treesitter`
+    opts = {
+      ensure_installed = {
         'bash', 'c', 'css', 'diff', 'html', 'javascript', 'json',
-        'lua', 'luadoc', 'markdown', 'markdown_inline', 'query',
-        'svelte', 'tsx', 'typescript', 'vim', 'vimdoc', 'yaml',
-      })
-      -- Enable treesitter highlighting and indentation per filetype:
-      vim.api.nvim_create_autocmd('FileType', {
-        callback = function()
-          local ok = pcall(vim.treesitter.start)
-          if ok then
-            vim.bo.indentexpr = "v:lua.require'nvim-treesitter'.indentexpr()"
-          end
-        end,
-      })
-    end,
+        'lua', 'luadoc', 'markdown', 'markdown_inline', 'python', 'query',
+        'svelte', 'toml', 'tsx', 'typescript', 'vim', 'vimdoc', 'yaml',
+      },
+      -- Autoinstall languages that are not installed
+      auto_install = true,
+      highlight = { enable = true },
+      -- Treesitter indent for python fights the (better) runtime indentexpr
+      indent = { enable = true, disable = { 'python' } },
+    },
   },
 
   -- The following comments only work if you have downloaded the kickstart repo, not just copy pasted the
