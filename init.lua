@@ -223,6 +223,19 @@ vim.keymap.set('n', '<leader>tu', '<cmd>TSToolsRemoveUnusedImports<cr>', { desc 
 vim.keymap.set('n', '<leader>tf', '<cmd>TSToolsFixAll<cr>', { desc = '[T]S [F]ix all errors' })
 vim.keymap.set('n', '<leader>tr', '<cmd>TSToolsRenameFile<cr>', { desc = '[T]S [R]ename file (updates imports)' })
 
+-- Python / Ruff keybindings (buffer-local; shadow the TS maps above in Python files)
+vim.api.nvim_create_autocmd('FileType', {
+  pattern = 'python',
+  group = vim.api.nvim_create_augroup('python-ruff-keymaps', { clear = true }),
+  callback = function(event)
+    local function ruff_action(kind)
+      return function() vim.lsp.buf.code_action { context = { only = { kind } }, apply = true } end
+    end
+    vim.keymap.set('n', '<leader>tf', ruff_action 'source.fixAll.ruff', { buffer = event.buf, desc = 'Ruff [F]ix all' })
+    vim.keymap.set('n', '<leader>to', ruff_action 'source.organizeImports.ruff', { buffer = event.buf, desc = 'Ruff [O]rganize imports' })
+  end,
+})
+
 -- TIP: Disable arrow keys in normal mode
 -- vim.keymap.set('n', '<left>', '<cmd>echo "Use h to move!!"<CR>')
 -- vim.keymap.set('n', '<right>', '<cmd>echo "Use l to move!!"<CR>')
