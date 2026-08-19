@@ -417,6 +417,16 @@ require('lazy').setup({
       -- Telescope picker. This is really useful to discover what Telescope can
       -- do as well as how to actually do it!
 
+      -- Unanchored Lua patterns matched against the path, so they filter at any depth.
+      --  - node_modules: ripgrep can only skip it via .gitignore, and it reads
+      --    .gitignore only inside a git repo. Directories like ~/Dev/Enactus/Misc have
+      --    neither, so this pattern is what actually keeps them out of the picker.
+      --  - .git: 'hidden = true' below makes ripgrep descend into it.
+      -- Deliberately scoped to the file pickers below rather than `defaults`: LSP
+      -- pickers filter with the same list *before* their single-result jump, so a
+      -- global setting would turn `grd` into a library type into "No Definitions found".
+      local noise_patterns = { 'node_modules/', '%.git/' }
+
       -- [[ Configure Telescope ]]
       -- See `:help telescope` and `:help telescope.setup()`
       require('telescope').setup {
@@ -428,10 +438,26 @@ require('lazy').setup({
         --     i = { ['<c-enter>'] = 'to_fuzzy_refine' },
         --   },
         -- },
+        defaults = {
+          -- Telescope's default grep args plus --no-require-git, so .gitignore rules
+          -- still apply outside a git repo (ripgrep ignores them there by default).
+          vimgrep_arguments = {
+            'rg', '--color=never', '--no-heading', '--with-filename', '--line-number', '--column', '--smart-case', '--no-require-git',
+          },
+        },
         pickers = {
           find_files = {
             hidden = true,
+            file_ignore_patterns = noise_patterns,
+            -- Same --no-require-git reasoning. A function so each call gets a fresh
+            -- table: telescope appends --hidden to this list in place, and a shared
+            -- table would collect another --hidden on every invocation.
+            find_command = function()
+              return { 'rg', '--files', '--color', 'never', '--no-require-git' }
+            end,
           },
+          live_grep = { file_ignore_patterns = noise_patterns },
+          grep_string = { file_ignore_patterns = noise_patterns },
         },
         extensions = {
           ['ui-select'] = { require('telescope.themes').get_dropdown() },

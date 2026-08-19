@@ -26,6 +26,10 @@ they are.
 `<C-o>` jumps back where you came from, `<C-i>` forward again. That pair is what
 makes `grd` usable — jump in, read, jump out.
 
+`node_modules/` and `.git/` are filtered out of `<leader>sf` and `<leader>sg`.
+`grd` and `grr` are deliberately *not* filtered, so going to a definition inside
+a library still works. To open an ignored file directly, use `:e` — it tab-completes.
+
 ## Vim grammar
 
 This is the part that transfers to every editor, every `vi` on every server, and
