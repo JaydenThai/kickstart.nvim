@@ -691,7 +691,23 @@ require('lazy').setup({
         -- Ruff runs as a second LSP beside pyright: live lint diagnostics plus
         -- fix-all and organize-imports code actions. Pyright keeps types/hover.
         ruff = {},
-        -- rust_analyzer = {},
+        -- Rust. `check.command = 'clippy'` swaps the default `cargo check` for
+        -- clippy, so you get idiomatic-Rust lints ("this loop could be an
+        -- iterator") alongside plain compiler errors -- most of the teaching
+        -- value while learning. Inlay hints stay hidden until <leader>th.
+        rust_analyzer = {
+          settings = {
+            ['rust-analyzer'] = {
+              check = { command = 'clippy' },
+              cargo = { allFeatures = true },
+              inlayHints = {
+                typeHints = { enable = true },
+                parameterHints = { enable = true },
+                closureReturnTypeHints = { enable = 'with_block' },
+              },
+            },
+          },
+        },
         --
         -- Some languages (like typescript) have entire language plugins that can be useful:
         --    https://github.com/pmizio/typescript-tools.nvim
@@ -734,6 +750,7 @@ require('lazy').setup({
         tailwindcss = 'tailwindcss-language-server',
         yamlls = 'yaml-language-server',
         eslint = 'eslint-lsp',
+        rust_analyzer = 'rust-analyzer',
       }
       ensure_installed = vim.tbl_map(function(name)
         return mason_name_overrides[name] or name
@@ -994,7 +1011,7 @@ require('lazy').setup({
       ensure_installed = {
         'bash', 'c', 'css', 'diff', 'html', 'javascript', 'json',
         'lua', 'luadoc', 'markdown', 'markdown_inline', 'python', 'query',
-        'svelte', 'toml', 'tsx', 'typescript', 'vim', 'vimdoc', 'yaml',
+        'rust', 'svelte', 'toml', 'tsx', 'typescript', 'vim', 'vimdoc', 'yaml',
       },
       -- Autoinstall languages that are not installed
       auto_install = true,
